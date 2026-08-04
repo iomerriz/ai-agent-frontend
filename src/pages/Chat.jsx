@@ -1,5 +1,7 @@
-import ReactMarkdown from 'react-markdown'
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 
@@ -63,13 +65,39 @@ function Chat() {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-xs px-4 py-2 rounded-lg text-sm ${
+                className={`px-4 py-2 rounded-lg text-sm ${
                   msg.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-800'
+                    ? 'bg-blue-600 text-white max-w-xs'
+                    : 'bg-gray-200 text-gray-800 w-full max-w-2xl'
                 }`}
               >
-                {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
+                {msg.role === 'user' ? (
+                  msg.content
+                ) : (
+                  <ReactMarkdown
+                    components={{
+                      code({ node, inline, className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || '')
+                        return !inline && match ? (
+                          <SyntaxHighlighter
+                            style={oneDark}
+                            language={match[1]}
+                            PreTag="div"
+                            {...props}
+                          >
+                            {String(children).replace(/\n$/, '')}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <code className="bg-gray-300 px-1 rounded text-sm" {...props}>
+                            {children}
+                          </code>
+                        )
+                      }
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                )}
               </div>
             </div>
           ))}
