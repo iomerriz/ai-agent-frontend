@@ -4,23 +4,23 @@ import api from '../api/axios'
 
 function Users() {
   const navigate = useNavigate()
-  const [users, setUsers] = useState([])
+  const [user, setUser] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchUser = async () => {
       try {
         const response = await api.get('/users')
-        setUsers(response.data)
+        setUser(response.data)
       } catch (err) {
         if (err.response?.status === 401) {
           navigate('/login')
         } else {
-          setError('Failed to fetch users')
+          setError('Failed to fetch profile')
         }
       }
     }
-    fetchUsers()
+    fetchUser()
   }, [])
 
   const handleLogout = () => {
@@ -29,10 +29,10 @@ function Users() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
+      <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">All Users</h2>
+          <h2 className="text-2xl font-bold text-gray-800">My Profile</h2>
           <div className="flex gap-3">
             <button
               onClick={() => navigate('/chat')}
@@ -53,22 +53,26 @@ function Users() {
           <p className="bg-red-100 text-red-600 p-3 rounded mb-4">{error}</p>
         )}
 
-        <div className="space-y-4">
-          {users.map((user) => (
-            <div key={user.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-lg font-semibold text-gray-800">{user.name}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
-                  <p className="text-sm text-gray-500">Age: {user.age}</p>
-                </div>
-                <span className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full">
-                  ID: {user.id}
-                </span>
-              </div>
+        {user && (
+          <div className="space-y-4">
+            <div className="border border-gray-200 rounded p-4">
+              <p className="text-sm text-gray-500">Name</p>
+              <p className="text-lg font-semibold text-gray-800">{user.name}</p>
             </div>
-          ))}
-        </div>
+            <div className="border border-gray-200 rounded p-4">
+              <p className="text-sm text-gray-500">Email</p>
+              <p className="text-lg font-semibold text-gray-800">{user.email}</p>
+            </div>
+            <div className="border border-gray-200 rounded p-4">
+              <p className="text-sm text-gray-500">Age</p>
+              <p className="text-lg font-semibold text-gray-800">{user.age}</p>
+            </div>
+            <div className="border border-gray-200 rounded p-4">
+              <p className="text-sm text-gray-500">ID</p>
+              <p className="text-lg font-semibold text-gray-800">{user.id}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
