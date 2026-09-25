@@ -21,13 +21,12 @@ function Users() {
       }
     }
     fetchUser()
-  }, [])
+  }, [navigate])
 
   const handleLogout = () => {
     localStorage.removeItem('token')
     navigate('/login')
   }
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
       <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
@@ -53,29 +52,17 @@ function Users() {
           <p className="bg-red-100 text-red-600 p-3 rounded mb-4">{error}</p>
         )}
 
-        {user && (
-          <div className="space-y-4">
-            <div className="border border-gray-200 rounded p-4">
-              <p className="text-sm text-gray-500">Name</p>
-              <p className="text-lg font-semibold text-gray-800">{user.name}</p>
-            </div>
-            <div className="border border-gray-200 rounded p-4">
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="text-lg font-semibold text-gray-800">{user.email}</p>
-            </div>
-            <div className="border border-gray-200 rounded p-4">
-              <p className="text-sm text-gray-500">Age</p>
-              <p className="text-lg font-semibold text-gray-800">{user.age}</p>
-            </div>
-            <div className="border border-gray-200 rounded p-4">
-              <p className="text-sm text-gray-500">ID</p>
-              <p className="text-lg font-semibold text-gray-800">{user.id}</p>
-            </div>
-          </div>
-        )}
+        <div className="space-y-4">
+          <p>Name: {user?.name}</p>
+          <p>Email: {user?.email}</p>
+          <p>Age: {user?.age}</p>
+          <p>ID: {user?.id}</p>
+        </div>
+
       </div>
     </div>
   )
+
 }
 
 export default Users
