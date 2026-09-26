@@ -6,11 +6,12 @@ function Users() {
   const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await api.get('/users')
+        const response = await api.get('/users/me')
         setUser(response.data)
       } catch (err) {
         if (err.response?.status === 401) {
@@ -18,6 +19,8 @@ function Users() {
         } else {
           setError('Failed to fetch profile')
         }
+      } finally {
+        setLoading(false)
       }
     }
     fetchUser()
@@ -52,12 +55,15 @@ function Users() {
           <p className="bg-red-100 text-red-600 p-3 rounded mb-4">{error}</p>
         )}
 
-        <div className="space-y-4 break-words [overflow-wrap:anywhere]">
-          <p>Name: {user?.name}</p>
-          <p>Email: {user?.email}</p>
-          <p>Age: {user?.age}</p>
-          <p>ID: {user?.id}</p>
-        </div>
+        {loading && <p className="text-gray-500">Loading profile...</p>}
+        {!loading && user && (
+          <div className="space-y-4 break-words [overflow-wrap:anywhere]">
+            <p>Name: {user.name}</p>
+            <p>Email: {user.email}</p>
+            <p>Age: {user.age}</p>
+            <p>ID: {user.id}</p>
+          </div>
+        )}
 
       </div>
     </div>
