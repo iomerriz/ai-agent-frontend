@@ -1,9 +1,44 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import api from '../api/axios'
+
+function CodeBlock({ code, language }) {
+  const [copied, setCopied] = useState(false)
+
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <div className="code-block my-3 min-w-0 max-w-full overflow-hidden rounded-xl border border-gray-700 bg-[#282c34] text-gray-100">
+      <div className="flex items-center justify-between gap-2 border-b border-gray-600 px-3 py-2 text-xs text-gray-300">
+        <span className="truncate">{language || 'Code'}</span>
+        <button type="button" onClick={copyCode} className="shrink-0 rounded px-2 py-1 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-blue-400" aria-label="Copy code">
+          {copied ? 'Copied' : 'Copy code'}
+        </button>
+      </div>
+      <SyntaxHighlighter
+        style={oneDark}
+        language={language || 'text'}
+        wrapLongLines
+        customStyle={{ margin: 0, padding: '0.75rem', background: 'transparent', maxWidth: '100%', overflowX: 'auto', fontSize: '0.8rem' }}
+        codeTagProps={{ style: { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }}
+      >
+        {code}
+      </SyntaxHighlighter>
+    </div>
+  )
+}
 
 function Chat() {
   const navigate = useNavigate()
@@ -211,7 +246,7 @@ function Chat() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`message-content px-4 py-2 rounded-2xl text-sm max-w-[92%] sm:max-w-[85%] lg:max-w-2xl min-w-0 break-words ${
+                  className={`message-content px-3 sm:px-4 py-2 rounded-2xl text-sm min-w-0 break-words ${msg.role === 'ai' && msg.content.includes('```') ? 'w-full max-w-full sm:max-w-[85%] lg:max-w-3xl' : 'max-w-[92%] sm:max-w-[85%] lg:max-w-2xl'} ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-sm'
                       : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm'
@@ -221,19 +256,16 @@ function Chat() {
                     msg.content
                   ) : (
                     <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
                       components={{
-                        code({ node, inline, className, children, ...props }) {
+                        pre({ children }) {
+                          return <div className="min-w-0 max-w-full overflow-hidden">{children}</div>
+                        },
+                        code({ node, className, children, ...props }) {
                           void node
                           const match = /language-(\w+)/.exec(className || '')
-                          return !inline && match ? (
-                            <SyntaxHighlighter
-                              style={oneDark}
-                              language={match[1]}
-                              PreTag="div"
-                              {...props}
-                            >
-                              {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
+                          return match ? (
+                            <CodeBlock language={match[1]} code={String(children).replace(/\n$/, '')} />
                           ) : (
                             <code
                               className="bg-gray-100 dark:bg-gray-700 px-1 rounded text-sm"

@@ -8,3 +8,4 @@ body { margin: 0; }
 .message-content p, .message-content li { overflow-wrap: anywhere; }
 .message-content img { max-width: 100%; height: auto; }
 .message-content table { display: block; max-width: 100%; overflow-x: auto; }
+.code-block pre, .code-block code { max-width: 100%; white-space: pre-wrap !important; overflow-wrap: anywhere; word-break: break-word; }
