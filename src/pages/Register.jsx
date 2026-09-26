@@ -22,8 +22,8 @@ function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <div className="min-h-dvh bg-gray-100 flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white p-5 sm:p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Create Account</h2>
 
         {error && (
@@ -33,30 +33,34 @@ function Register() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="name"
+            aria-label="Full name"
             placeholder="Full Name"
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
             name="age"
+            aria-label="Age"
             placeholder="Age"
             type="number"
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
             name="email"
+            aria-label="Email"
             placeholder="Email"
             type="email"
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
             name="password"
+            aria-label="Password"
             placeholder="Password"
             type="password"
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             type="submit"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -13,11 +13,23 @@ function Chat() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const bottomRef = useRef(null)
 
+  const fetchConversations = useCallback(async () => {
+    try {
+      const response = await api.get('/conversations')
+      setConversations(response.data)
+    } catch (err) {
+      if (err.response?.status === 401) navigate('/login')
+    }
+  }, [navigate])
+
   useEffect(() => {
-    fetchConversations()
-  }, [])
+    api.get('/conversations')
+      .then((response) => setConversations(response.data))
+      .catch((err) => { if (err.response?.status === 401) navigate('/login') })
+  }, [navigate])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -28,20 +40,12 @@ function Chat() {
     document.documentElement.classList.toggle('dark')
   }
 
-  const fetchConversations = async () => {
-    try {
-      const response = await api.get('/conversations')
-      setConversations(response.data)
-    } catch (err) {
-      if (err.response?.status === 401) navigate('/login')
-    }
-  }
-
   const fetchConversation = async (id) => {
     try {
       const response = await api.get(`/conversations/${id}`)
       setActiveConversationId(id)
       setMessages(response.data.messages)
+      setSidebarOpen(false)
     } catch (err) {
       if (err.response?.status === 401) navigate('/login')
     }
@@ -50,6 +54,7 @@ function Chat() {
   const startNewChat = () => {
     setActiveConversationId(null)
     setMessages([])
+    setSidebarOpen(false)
   }
 
   const deleteConversation = async (id) => {
@@ -60,7 +65,7 @@ function Chat() {
         setMessages([])
       }
       fetchConversations()
-    } catch (err) {
+    } catch {
       console.error('Failed to delete conversation')
     }
   }
@@ -113,39 +118,45 @@ function Chat() {
   }
 
   return (
-     <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-950 transition-colors duration-300">
+     <div className="flex flex-col h-dvh min-h-0 bg-gray-100 dark:bg-gray-950 transition-colors duration-300">
 
-      <div className="flex justify-between items-center px-6 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <h1 className="text-lg font-semibold text-gray-800 dark:text-white">AI Agent</h1>
-        <div className="flex gap-4 items-center">
+      <div className="flex flex-wrap justify-between items-center gap-2 px-3 sm:px-6 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2 min-w-0">
+          <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open conversations" className="md:hidden rounded-lg px-2 py-1 text-xl text-gray-700 dark:text-gray-100 focus-visible:outline-2 focus-visible:outline-blue-500">☰</button>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-white truncate">AI Agent</h1>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:gap-4 items-center text-xs sm:text-sm">
           <button
             onClick={toggleDarkMode}
-            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition"
           >
             {darkMode ? '☀️ Light' : '🌙 Dark'}
           </button>
           <button
             onClick={() => navigate('/users')}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-blue-600 hover:underline"
           >
             My Profile
           </button>
           <button
             onClick={handleLogout}
-            className="text-sm text-red-500 hover:underline"
+            className="text-red-500 hover:underline"
           >
             Logout
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
 
-        <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        {sidebarOpen && <button type="button" aria-label="Close conversations" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-20 bg-black/50 md:hidden" />}
+
+        <aside className={`fixed inset-y-0 left-0 z-30 w-[min(18rem,85vw)] md:static md:z-auto md:w-64 md:shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-transform md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="p-3">
+            <button type="button" onClick={() => setSidebarOpen(false)} className="md:hidden float-right mb-2 px-2 py-1 text-gray-600 dark:text-gray-200" aria-label="Close sidebar">✕</button>
             <button
               onClick={startNewChat}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+              className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition clear-both"
             >
               + New Chat
             </button>
@@ -168,24 +179,25 @@ function Chat() {
               >
                 <button
                   onClick={() => fetchConversation(conv.id)}
-                  className="flex-1 text-left text-sm truncate font-medium"
+                  className="flex-1 min-w-0 text-left text-sm truncate font-medium"
                 >
                   {conv.title}
                 </button>
                 <button
                   onClick={() => deleteConversation(conv.id)}
-                  className="ml-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-xs"
+                  aria-label={`Delete ${conv.title}`}
+                  className="ml-2 p-2 text-gray-400 hover:text-red-500 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition text-xs"
                 >
                   ✕
                 </button>
               </div>
             ))}
           </div>
-        </div>
+        </aside>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-4">
             {messages.length === 0 && (
               <div className="flex items-center justify-center h-full">
                 <p className="text-gray-400 text-sm">
@@ -199,7 +211,7 @@ function Chat() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`px-4 py-2 rounded-2xl text-sm max-w-2xl ${
+                  className={`message-content px-4 py-2 rounded-2xl text-sm max-w-[92%] sm:max-w-[85%] lg:max-w-2xl min-w-0 break-words ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-sm'
                       : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm'
@@ -211,6 +223,7 @@ function Chat() {
                     <ReactMarkdown
                       components={{
                         code({ node, inline, className, children, ...props }) {
+                          void node
                           const match = /language-(\w+)/.exec(className || '')
                           return !inline && match ? (
                             <SyntaxHighlighter
@@ -248,20 +261,20 @@ function Chat() {
             <div ref={bottomRef} />
           </div>
 
-          <div className="p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex gap-3 max-w-4xl mx-auto">
+          <div className="px-3 py-3 sm:p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="flex gap-2 sm:gap-3 max-w-4xl mx-auto min-w-0">
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message... (Enter to send)"
+                placeholder="Type a message..."
                 rows={1}
-                className="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                className="flex-1 min-w-0 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-xl px-3 sm:px-4 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
               <button
                 onClick={handleSend}
                 disabled={loading}
-                className="bg-blue-600 text-white px-5 py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium"
+                className="bg-blue-600 text-white px-3 sm:px-5 py-2 rounded-xl hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium shrink-0"
               >
                 Send
               </button>
