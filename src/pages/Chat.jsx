@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import api from '../api/axios'
@@ -50,6 +51,7 @@ function Chat() {
   const [darkMode, setDarkMode] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const bottomRef = useRef(null)
+  const streamController = useRef(null)
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -67,8 +69,10 @@ function Chat() {
   }, [navigate])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    bottomRef.current?.scrollIntoView({ behavior: loading ? 'auto' : 'smooth' })
+  }, [messages, loading])
+
+  useEffect(() => () => streamController.current?.abort(), [])
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode)
@@ -76,6 +80,7 @@ function Chat() {
   }
 
   const fetchConversation = async (id) => {
+    streamController.current?.abort()
     try {
       const response = await api.get(`/conversations/${id}`)
       setActiveConversationId(id)
@@ -87,6 +92,7 @@ function Chat() {
   }
 
   const startNewChat = () => {
+    streamController.current?.abort()
     setActiveConversationId(null)
     setMessages([])
     setSidebarOpen(false)
@@ -106,37 +112,67 @@ function Chat() {
   }
 
   const handleSend = async () => {
-    if (!input.trim()) return
+    if (!input.trim() || loading) return
 
-    const userMessage = { role: 'user', content: input }
-    setMessages((prev) => [...prev, userMessage])
+    const message = input.trim()
+    const controller = new AbortController()
+    streamController.current = controller
+    setMessages((prev) => [...prev, { role: 'user', content: message }, { role: 'ai', content: '' }])
     setInput('')
     setLoading(true)
 
     try {
-      const response = await api.post('/chat', {
-        message: input,
-        conversation_id: activeConversationId,
+      const response = await fetch(`${api.defaults.baseURL}/chat/stream`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+        body: JSON.stringify({ message, conversation_id: activeConversationId }),
       })
-
-      const aiMessage = { role: 'ai', content: response.data.reply }
-      setMessages((prev) => [...prev, aiMessage])
-
-      if (!activeConversationId) {
-        setActiveConversationId(response.data.conversation_id)
-        fetchConversations()
-      }
-    } catch (err) {
-      if (err.response?.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         navigate('/login')
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'ai', content: 'Error getting response. Please try again.' },
-        ])
+        return
+      }
+      if (!response.ok || !response.body) {
+        throw new Error('Could not start the response. Please try again.')
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let completed = false
+      const handleEvent = (line) => {
+        if (!line.startsWith('data: ')) return
+        const event = JSON.parse(line.slice(6))
+        if (event.type === 'delta') {
+          setMessages((prev) => prev.map((item, index) => index === prev.length - 1 ? { ...item, content: item.content + event.text } : item))
+        } else if (event.type === 'done') {
+          completed = true
+          if (!activeConversationId) setActiveConversationId(event.conversation_id)
+          fetchConversations()
+        } else if (event.type === 'error') {
+          throw new Error(event.message)
+        }
+      }
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const events = buffer.split('\n\n')
+        buffer = events.pop()
+        events.forEach((event) => handleEvent(event.trim()))
+      }
+      if (!completed) throw new Error('The response stopped early. Please try again.')
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setMessages((prev) => prev.map((item, index) => index === prev.length - 1 ? { ...item, content: `${item.content}${item.content ? '\n\n' : ''}${err.message || 'Error getting response. Please try again.'}` } : item))
       }
     } finally {
       setLoading(false)
+      if (streamController.current === controller) streamController.current = null
     }
   }
 
@@ -246,17 +282,17 @@ function Chat() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`message-content px-3 sm:px-4 py-2 rounded-2xl text-sm min-w-0 break-words ${msg.role === 'ai' && msg.content.includes('```') ? 'w-full max-w-full sm:max-w-[85%] lg:max-w-3xl' : 'max-w-[92%] sm:max-w-[85%] lg:max-w-2xl'} ${
+                  className={`message-content min-w-0 break-words ${msg.role === 'user' ? 'max-w-[92%] sm:max-w-[85%] lg:max-w-2xl px-4 py-2 rounded-2xl text-sm' : 'assistant-response w-full max-w-full sm:max-w-[85%] lg:max-w-3xl px-1 py-2 text-[15px] sm:text-base leading-relaxed'} ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-sm'
-                      : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm'
+                      : 'text-gray-800 dark:text-gray-100'
                   }`}
                 >
                   {msg.role === 'user' ? (
                     msg.content
-                  ) : (
+                  ) : msg.content ? (
                     <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
+                      remarkPlugins={[remarkGfm, remarkBreaks]}
                       components={{
                         pre({ children }) {
                           return <div className="min-w-0 max-w-full overflow-hidden">{children}</div>
@@ -277,19 +313,13 @@ function Chat() {
                         },
                       }}
                     >
-                      {msg.content}
+                      {msg.content.replace(/<br\s*\/?\s*>/gi, ' · ')}
                     </ReactMarkdown>
-                  )}
+                  ) : <span className="text-gray-500 dark:text-gray-400">Thinking...</span>}
+                  {msg.role === 'ai' && loading && index === messages.length - 1 && <span className="inline-block ml-1 h-4 w-1.5 bg-blue-500 animate-pulse align-middle" aria-label="Generating response" />}
                 </div>
               </div>
             ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 px-4 py-2 rounded-2xl rounded-bl-sm text-sm">
-                  Thinking...
-                </div>
-              </div>
-            )}
             <div ref={bottomRef} />
           </div>
 

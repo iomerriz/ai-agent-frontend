@@ -9,3 +9,35 @@ body { margin: 0; }
 .message-content img { max-width: 100%; height: auto; }
 .message-content table { display: block; max-width: 100%; overflow-x: auto; }
 .code-block pre, .code-block code { max-width: 100%; white-space: pre-wrap !important; overflow-wrap: anywhere; word-break: break-word; }
+
+.assistant-response { line-height: 1.7; }
+.assistant-response > :first-child { margin-top: 0; }
+.assistant-response > :last-child { margin-bottom: 0; }
+.assistant-response p { margin: 0 0 1rem; }
+.assistant-response h1, .assistant-response h2, .assistant-response h3 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 1.75rem 0 0.65rem;
+}
+.assistant-response h1 { font-size: 1.5rem; }
+.assistant-response h2 { font-size: 1.25rem; }
+.assistant-response h3 { font-size: 1.1rem; }
+.assistant-response ul, .assistant-response ol { margin: 0.5rem 0 1.15rem; padding-left: 1.5rem; }
+.assistant-response ul { list-style: disc; }
+.assistant-response ol { list-style: decimal; }
+.assistant-response li { padding-left: 0.2rem; margin: 0.35rem 0; }
+.assistant-response li > p { margin: 0.25rem 0; }
+.assistant-response blockquote { margin: 1rem 0; padding: 0.2rem 0 0.2rem 1rem; border-left: 3px solid #60a5fa; color: #64748b; }
+.dark .assistant-response blockquote { color: #cbd5e1; }
+.assistant-response hr { margin: 1.5rem 0; border: 0; border-top: 1px solid #cbd5e1; }
+.dark .assistant-response hr { border-color: #475569; }
+.assistant-response strong { font-weight: 700; }
+.assistant-response a { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
+.dark .assistant-response a { color: #93c5fd; }
+.assistant-response :not(pre) > code { padding: 0.1rem 0.3rem; border-radius: 0.3rem; background: #e2e8f0; font-size: 0.88em; }
+.dark .assistant-response :not(pre) > code { background: #334155; }
+.assistant-response table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9em; }
+.assistant-response th, .assistant-response td { padding: 0.65rem 0.8rem; border: 1px solid #cbd5e1; text-align: left; vertical-align: top; }
+.dark .assistant-response th, .dark .assistant-response td { border-color: #475569; }
+.assistant-response th { background: #e2e8f0; font-weight: 700; }
+.dark .assistant-response th { background: #1e293b; }
