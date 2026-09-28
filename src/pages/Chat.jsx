@@ -204,12 +204,6 @@ function Chat() {
             {darkMode ? '☀️ Light' : '🌙 Dark'}
           </button>
           <button
-            onClick={() => navigate('/users')}
-            className="text-blue-600 hover:underline"
-          >
-            My Profile
-          </button>
-          <button
             onClick={handleLogout}
             className="text-red-500 hover:underline"
           >

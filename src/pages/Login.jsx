@@ -23,7 +23,7 @@ function Login() {
     try {
       const response = await api.post('/login', form)
       localStorage.setItem('token', response.data.access_token)
-      navigate('/users')
+      navigate('/chat', { replace: true })
     } catch (err) {
       const detail = err.response?.data?.detail
       setError(typeof detail === 'string' ? detail : 'Could not sign in. Please check your details and try again.')
