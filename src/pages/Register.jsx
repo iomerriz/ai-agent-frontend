@@ -1,81 +1,69 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../api/axios'
+import AuthLayout from './AuthLayout'
 
 function Register() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', age: '', email: '', password: '' })
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const handleChange = (event) => {
+    setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+    if (error) setError('')
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
+    setError('')
     try {
-      await api.post('/register', { ...form, age: parseInt(form.age) })
+      await api.post('/register', { ...form, age: Number(form.age) })
       navigate('/login')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed')
+      const detail = err.response?.data?.detail
+      setError(typeof detail === 'string' ? detail : 'Could not create your account. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-dvh bg-gray-100 flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white p-5 sm:p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Create Account</h2>
-
-        {error && (
-          <p className="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">{error}</p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            name="name"
-            aria-label="Full name"
-            placeholder="Full Name"
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            name="age"
-            aria-label="Age"
-            placeholder="Age"
-            type="number"
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            name="email"
-            aria-label="Email"
-            placeholder="Email"
-            type="email"
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            name="password"
-            aria-label="Password"
-            placeholder="Password"
-            type="password"
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition font-semibold"
-          >
-            Register
-          </button>
-        </form>
-
-        <p className="mt-4 text-sm text-gray-600">
-          Already have an account?{' '}
-          <a href="/login" className="text-blue-600 hover:underline">Login</a>
-        </p>
+    <AuthLayout mode="register">
+      <div className="auth-intro">
+        <span className="auth-kicker">A NEW WAY TO EXPLORE</span>
+        <h2>Start something<br className="auth-register-break" /> brilliant<span className="auth-title-dot">.</span></h2>
+        <p>A little curiosity goes a long way. Let’s get you set up.</p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="auth-form">
+        {error && <div className="auth-error" role="alert">{error}</div>}
+        <div className="auth-field">
+          <label htmlFor="register-name">Full name</label>
+          <input id="register-name" name="name" type="text" autoComplete="name" placeholder="Your name" value={form.name} onChange={handleChange} required />
+        </div>
+        <div className="auth-field">
+          <label htmlFor="register-age">Age</label>
+          <input id="register-age" name="age" type="number" inputMode="numeric" min="1" max="120" placeholder="Your age" value={form.age} onChange={handleChange} required />
+        </div>
+        <div className="auth-field">
+          <label htmlFor="register-email">Email address</label>
+          <input id="register-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} required />
+        </div>
+        <div className="auth-field">
+          <label htmlFor="register-password">Password</label>
+          <div className="auth-password-wrap">
+            <input id="register-password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Create a password" value={form.password} onChange={handleChange} required />
+            <button type="button" className="auth-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? 'Hide' : 'Show'}</button>
+          </div>
+        </div>
+        <button className="auth-submit" type="submit" disabled={submitting}>{submitting ? 'Creating account…' : 'Create account'}<span aria-hidden="true">↗</span></button>
+      </form>
+      <p className="auth-switch">Already have an account? <Link to="/login">Sign in <span aria-hidden="true">→</span></Link></p>
+    </AuthLayout>
   )
 }
 

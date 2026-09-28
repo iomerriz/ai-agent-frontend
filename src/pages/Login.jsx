@@ -1,67 +1,62 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import api from '../api/axios'
+import AuthLayout from './AuthLayout'
 
 function Login() {
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  const handleChange = (event) => {
+    setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+    if (error) setError('')
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
+    setError('')
     try {
       const response = await api.post('/login', form)
       localStorage.setItem('token', response.data.access_token)
       navigate('/users')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed')
+      const detail = err.response?.data?.detail
+      setError(typeof detail === 'string' ? detail : 'Could not sign in. Please check your details and try again.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-dvh bg-gray-100 flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white p-5 sm:p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">Welcome Back</h2>
-
-        {error && (
-          <p className="bg-red-100 text-red-600 p-3 rounded mb-4 text-sm">{error}</p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            name="email"
-            aria-label="Email"
-            placeholder="Email"
-            type="email"
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            name="password"
-            aria-label="Password"
-            placeholder="Password"
-            type="password"
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition font-semibold"
-          >
-            Login
-          </button>
-        </form>
-
-        <p className="mt-4 text-sm text-gray-600">
-          Don't have an account?{' '}
-          <a href="/register" className="text-blue-600 hover:underline">Register</a>
-        </p>
+    <AuthLayout mode="login">
+      <div className="auth-intro">
+        <span className="auth-kicker">CONTINUE THE CONVERSATION</span>
+        <h2>Welcome back<span className="auth-title-dot">.</span></h2>
+        <p>Pick up right where your curiosity left off.</p>
       </div>
-    </div>
+
+      <form onSubmit={handleSubmit} className="auth-form">
+        {error && <div className="auth-error" role="alert">{error}</div>}
+        <div className="auth-field">
+          <label htmlFor="login-email">Email address</label>
+          <input id="login-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} required />
+        </div>
+        <div className="auth-field">
+          <label htmlFor="login-password">Password</label>
+          <div className="auth-password-wrap">
+            <input id="login-password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" value={form.password} onChange={handleChange} required />
+            <button type="button" className="auth-password-toggle" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? 'Hide' : 'Show'}</button>
+          </div>
+        </div>
+        <button className="auth-submit" type="submit" disabled={submitting}>{submitting ? 'Signing in…' : 'Sign in'}<span aria-hidden="true">↗</span></button>
+      </form>
+      <p className="auth-switch">New around here? <Link to="/register">Create an account <span aria-hidden="true">→</span></Link></p>
+    </AuthLayout>
   )
 }
 
