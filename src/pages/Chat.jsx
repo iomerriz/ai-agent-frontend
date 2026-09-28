@@ -194,7 +194,7 @@ function Chat() {
       <div className="flex flex-wrap justify-between items-center gap-2 px-3 sm:px-6 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2 min-w-0">
           <button type="button" onClick={() => setSidebarOpen(true)} aria-label="Open conversations" className="md:hidden rounded-lg px-2 py-1 text-xl text-gray-700 dark:text-gray-100 focus-visible:outline-2 focus-visible:outline-blue-500">☰</button>
-          <h1 className="text-lg font-semibold text-gray-800 dark:text-white truncate">AI Agent</h1>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-white truncate">Muse</h1>
         </div>
         <div className="flex flex-wrap gap-2 sm:gap-4 items-center text-xs sm:text-sm">
           <button

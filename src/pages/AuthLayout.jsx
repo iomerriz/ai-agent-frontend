@@ -14,11 +14,11 @@ export default function AuthLayout({ children, mode }) {
   return (
     <main className="auth-page">
       <div className="auth-shell">
-        <section className="auth-story" aria-label="About AI Agent">
+        <section className="auth-story" aria-label="About Muse">
           <div className="auth-story-top">
-            <Link className="auth-brand auth-brand-light" to="/login" aria-label="AI Agent home">
+            <Link className="auth-brand auth-brand-light" to="/login" aria-label="Muse home">
               <span className="auth-brand-mark"><Sparkle size={19} /></span>
-              <span>ai agent<span className="auth-brand-period">.</span></span>
+              <span>muse<span className="auth-brand-period">.</span></span>
             </Link>
             <span className="auth-edition">YOUR SPACE TO THINK</span>
           </div>
@@ -40,9 +40,9 @@ export default function AuthLayout({ children, mode }) {
 
         <section className="auth-panel" aria-label={mode === 'login' ? 'Sign in' : 'Create an account'}>
           <div className="auth-panel-inner">
-            <Link className="auth-brand auth-mobile-brand" to="/login" aria-label="AI Agent home">
+            <Link className="auth-brand auth-mobile-brand" to="/login" aria-label="Muse home">
               <span className="auth-brand-mark"><Sparkle size={18} /></span>
-              <span>ai agent<span className="auth-brand-period">.</span></span>
+              <span>muse<span className="auth-brand-period">.</span></span>
             </Link>
             <div className="auth-topline"><span className="auth-step">{mode === 'login' ? 'WELCOME BACK' : 'GET STARTED'}</span><span className="auth-topline-star">✳</span></div>
             {children}
